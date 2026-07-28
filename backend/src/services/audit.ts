@@ -14,7 +14,7 @@ export async function writeAudit(params: {
       action: params.action,
       entity: params.entity,
       entityId: params.entityId,
-      details: params.details as object | undefined,
+      details: params.details !== undefined ? JSON.stringify(params.details) : null,
       ipAddress: params.ipAddress,
     },
   });

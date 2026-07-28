@@ -2,31 +2,69 @@ import { useEffect, useState } from 'react';
 import { Redirect, Route } from 'react-router-dom';
 import {
   IonApp,
+  IonContent,
+  IonHeader,
   IonIcon,
+  IonItem,
   IonLabel,
+  IonList,
+  IonMenu,
+  IonMenuToggle,
   IonRouterOutlet,
-  IonTabBar,
-  IonTabButton,
-  IonTabs,
+  IonSplitPane,
+  IonTitle,
+  IonToolbar,
   setupIonicReact,
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import {
-  cubeOutline,
   homeOutline,
-  carOutline,
+  cubeOutline,
   layersOutline,
+  cartOutline,
+  carOutline,
+  peopleOutline,
+  cashOutline,
+  documentTextOutline,
   personOutline,
+  businessOutline,
 } from 'ionicons/icons';
 import { api, AuthUser, getToken } from './lib/api';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ProductionPage from './pages/ProductionPage';
 import StockPage from './pages/StockPage';
+import OrdersPage from './pages/OrdersPage';
 import DeliveriesPage from './pages/DeliveriesPage';
+import EmployeesPage from './pages/EmployeesPage';
+import SalaryPage from './pages/SalaryPage';
+import ReportsPage from './pages/ReportsPage';
+import CustomersPage from './pages/CustomersPage';
+import VehiclesPage from './pages/VehiclesPage';
 import ProfilePage from './pages/ProfilePage';
 
 setupIonicReact();
+
+type MenuItem = {
+  url: string;
+  title: string;
+  icon: string;
+  roles?: string[];
+};
+
+const menuItems: MenuItem[] = [
+  { url: '/dashboard', title: 'Главная', icon: homeOutline },
+  { url: '/production', title: 'Производство', icon: cubeOutline },
+  { url: '/stock', title: 'Склад', icon: layersOutline },
+  { url: '/orders', title: 'Продажи', icon: cartOutline, roles: ['ADMIN', 'DIRECTOR', 'MANAGER', 'ACCOUNTANT'] },
+  { url: '/deliveries', title: 'Доставки', icon: carOutline, roles: ['ADMIN', 'DIRECTOR', 'MANAGER', 'DRIVER'] },
+  { url: '/customers', title: 'Клиенты', icon: peopleOutline, roles: ['ADMIN', 'DIRECTOR', 'MANAGER'] },
+  { url: '/employees', title: 'Сотрудники', icon: peopleOutline, roles: ['ADMIN', 'DIRECTOR', 'ACCOUNTANT', 'MANAGER'] },
+  { url: '/salary', title: 'Зарплата', icon: cashOutline, roles: ['ADMIN', 'DIRECTOR', 'ACCOUNTANT'] },
+  { url: '/vehicles', title: 'Автопарк', icon: carOutline, roles: ['ADMIN', 'DIRECTOR', 'MANAGER', 'DRIVER'] },
+  { url: '/reports', title: 'Отчеты', icon: documentTextOutline, roles: ['ADMIN', 'DIRECTOR', 'ACCOUNTANT', 'MANAGER'] },
+  { url: '/profile', title: 'Профиль', icon: personOutline },
+];
 
 export default function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -58,62 +96,67 @@ export default function App() {
   if (!user) {
     return (
       <IonApp>
-        <LoginPage
-          onLogin={(u) => {
-            setUser(u);
-          }}
-        />
+        <LoginPage onLogin={setUser} />
       </IonApp>
     );
   }
 
+  const visibleMenu = menuItems.filter(
+    (item) => !item.roles || item.roles.includes(user.role)
+  );
+
   return (
     <IonApp>
       <IonReactRouter>
-        <IonTabs>
-          <IonRouterOutlet>
-            <Route exact path="/dashboard">
-              <DashboardPage />
-            </Route>
-            <Route exact path="/production">
-              <ProductionPage />
-            </Route>
-            <Route exact path="/stock">
-              <StockPage />
-            </Route>
-            <Route exact path="/deliveries">
-              <DeliveriesPage />
-            </Route>
-            <Route exact path="/profile">
-              <ProfilePage user={user} onLogout={() => setUser(null)} />
-            </Route>
+        <IonSplitPane contentId="main">
+          <IonMenu contentId="main" type="overlay">
+            <IonHeader>
+              <IonToolbar color="primary">
+                <IonTitle>BlockERP</IonTitle>
+              </IonToolbar>
+            </IonHeader>
+            <IonContent>
+              <IonList>
+                <IonItem lines="none">
+                  <IonIcon icon={businessOutline} slot="start" />
+                  <IonLabel>
+                    <h2>{user.login}</h2>
+                    <p>{user.roleName || user.role}</p>
+                  </IonLabel>
+                </IonItem>
+                {visibleMenu.map((item) => (
+                  <IonMenuToggle key={item.url} autoHide>
+                    <IonItem routerLink={item.url} routerDirection="none" lines="none" detail={false}>
+                      <IonIcon slot="start" icon={item.icon} />
+                      <IonLabel>{item.title}</IonLabel>
+                    </IonItem>
+                  </IonMenuToggle>
+                ))}
+              </IonList>
+            </IonContent>
+          </IonMenu>
+
+          <IonRouterOutlet id="main">
+            <Route exact path="/dashboard" component={DashboardPage} />
+            <Route exact path="/production" component={ProductionPage} />
+            <Route exact path="/stock" component={StockPage} />
+            <Route exact path="/orders" component={OrdersPage} />
+            <Route exact path="/deliveries" component={DeliveriesPage} />
+            <Route exact path="/customers" component={CustomersPage} />
+            <Route exact path="/employees" component={EmployeesPage} />
+            <Route exact path="/salary" component={SalaryPage} />
+            <Route exact path="/vehicles" component={VehiclesPage} />
+            <Route exact path="/reports" component={ReportsPage} />
+            <Route
+              exact
+              path="/profile"
+              render={() => <ProfilePage user={user} onLogout={() => setUser(null)} />}
+            />
             <Route exact path="/">
               <Redirect to="/dashboard" />
             </Route>
           </IonRouterOutlet>
-          <IonTabBar slot="bottom">
-            <IonTabButton tab="dashboard" href="/dashboard">
-              <IonIcon icon={homeOutline} />
-              <IonLabel>Главная</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="production" href="/production">
-              <IonIcon icon={cubeOutline} />
-              <IonLabel>Производство</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="stock" href="/stock">
-              <IonIcon icon={layersOutline} />
-              <IonLabel>Склад</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="deliveries" href="/deliveries">
-              <IonIcon icon={carOutline} />
-              <IonLabel>Доставки</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="profile" href="/profile">
-              <IonIcon icon={personOutline} />
-              <IonLabel>Профиль</IonLabel>
-            </IonTabButton>
-          </IonTabBar>
-        </IonTabs>
+        </IonSplitPane>
       </IonReactRouter>
     </IonApp>
   );

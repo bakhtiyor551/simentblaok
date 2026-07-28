@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma';
-import { StockMovementType } from '@prisma/client';
+import { StockMovementType } from '../lib/constants';
 import { AppError } from '../middleware/errorHandler';
 import { sendTelegram } from './telegram';
 import { emitEvent } from './realtime';

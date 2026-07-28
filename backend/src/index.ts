@@ -65,6 +65,15 @@ app.use('/api/audit', auditRouter);
 app.use(errorHandler);
 
 const PORT = Number(process.env.PORT || 4000);
+server.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Порт ${PORT} уже занят. Backend, скорее всего, уже запущен.`);
+    console.error(`Проверьте http://localhost:${PORT}/api/health`);
+    console.error(`Или освободите порт: netstat -ano | findstr :${PORT}`);
+    process.exit(1);
+  }
+  throw err;
+});
 server.listen(PORT, () => {
   console.log(`BlockERP API listening on http://localhost:${PORT}`);
 });

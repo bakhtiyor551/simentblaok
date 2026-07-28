@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { RoleCode, ShiftType } from '@prisma/client';
+import { RoleCode, ShiftType } from '../lib/constants';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, AppError } from '../middleware/errorHandler';

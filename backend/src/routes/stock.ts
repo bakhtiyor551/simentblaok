@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { RoleCode } from '@prisma/client';
+import { RoleCode } from '../lib/constants';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
@@ -22,10 +22,7 @@ stockRouter.get(
       where: q
         ? {
             blockType: {
-              OR: [
-                { name: { contains: q, mode: 'insensitive' } },
-                { code: { contains: q, mode: 'insensitive' } },
-              ],
+              OR: [{ name: { contains: q } }, { code: { contains: q } }],
             },
           }
         : undefined,

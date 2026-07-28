@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { RoleCode } from '@prisma/client';
+import { RoleCode } from '../lib/constants';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
@@ -15,10 +15,7 @@ customersRouter.get(
     const customers = await prisma.customer.findMany({
       where: q
         ? {
-            OR: [
-              { fullName: { contains: q, mode: 'insensitive' } },
-              { phone: { contains: q } },
-            ],
+            OR: [{ fullName: { contains: q } }, { phone: { contains: q } }],
           }
         : undefined,
       orderBy: { fullName: 'asc' },

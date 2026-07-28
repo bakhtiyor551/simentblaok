@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { RoleCode } from '@prisma/client';
+import { RoleCode } from '../lib/constants';
 import { prisma } from '../lib/prisma';
 
 export interface AuthUser {
@@ -35,7 +35,7 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
     req.user = {
       id: user.id,
       login: user.login,
-      role: user.role.code,
+      role: user.role.code as RoleCode,
       employeeId: user.employee?.id ?? null,
     };
     next();

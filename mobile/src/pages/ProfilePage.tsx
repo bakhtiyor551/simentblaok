@@ -1,14 +1,10 @@
 import {
   IonButton,
-  IonContent,
-  IonHeader,
   IonItem,
   IonLabel,
   IonList,
-  IonPage,
-  IonTitle,
-  IonToolbar,
 } from '@ionic/react';
+import AppPage from '../components/AppPage';
 import { AuthUser } from '../lib/api';
 
 export default function ProfilePage({
@@ -19,41 +15,34 @@ export default function ProfilePage({
   onLogout: () => void;
 }) {
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonTitle>Профиль</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent className="ion-padding">
-        <IonList>
+    <AppPage title="Профиль">
+      <IonList>
+        <IonItem>
+          <IonLabel>
+            <h2>{user.login}</h2>
+            <p>{user.roleName || user.role}</p>
+          </IonLabel>
+        </IonItem>
+        {user.employee ? (
           <IonItem>
             <IonLabel>
-              <h2>{user.login}</h2>
-              <p>{user.roleName || user.role}</p>
+              <h2>{user.employee.fullName}</h2>
+              <p>Сотрудник</p>
             </IonLabel>
           </IonItem>
-          {user.employee ? (
-            <IonItem>
-              <IonLabel>
-                <h2>{user.employee.fullName}</h2>
-                <p>Сотрудник</p>
-              </IonLabel>
-            </IonItem>
-          ) : null}
-        </IonList>
-        <IonButton
-          expand="block"
-          color="medium"
-          className="ion-margin-top"
-          onClick={() => {
-            localStorage.removeItem('blockerp_token');
-            onLogout();
-          }}
-        >
-          Выйти
-        </IonButton>
-      </IonContent>
-    </IonPage>
+        ) : null}
+      </IonList>
+      <IonButton
+        expand="block"
+        color="medium"
+        className="ion-margin-top"
+        onClick={() => {
+          localStorage.removeItem('blockerp_token');
+          onLogout();
+        }}
+      >
+        Выйти
+      </IonButton>
+    </AppPage>
   );
 }

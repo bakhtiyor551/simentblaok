@@ -45,7 +45,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: AuthUser) => vo
       </IonHeader>
       <IonContent className="ion-padding">
         <h2>Вход</h2>
-        <p>Мобильное приложение завода цементных блоков</p>
+        <p>Приложение завода цементных блоков</p>
         <IonList>
           <IonItem>
             <IonInput label="Логин" labelPlacement="stacked" value={login} onIonInput={(e) => setLogin(String(e.detail.value || ''))} />

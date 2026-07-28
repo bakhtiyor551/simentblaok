@@ -2,16 +2,14 @@
   "name": "blockerp",
   "version": "1.0.0",
   "private": true,
-  "description": "BlockERP — система автоматизации завода цементных блоков",
+  "description": "BlockERP — мобильное приложение завода цементных блоков",
   "workspaces": [
     "backend",
-    "admin",
     "mobile"
   ],
   "scripts": {
     "dev:backend": "npm run dev --workspace=backend",
-    "dev:admin": "npm run dev --workspace=admin",
-    "dev:mobile": "npm run start --workspace=mobile",
+    "dev:mobile": "npm run dev --workspace=mobile",
     "db:migrate": "npm run prisma:migrate --workspace=backend",
     "db:seed": "npm run prisma:seed --workspace=backend",
     "setup": "npm install && npm run db:migrate && npm run db:seed"

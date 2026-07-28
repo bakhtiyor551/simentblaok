@@ -1,16 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  IonContent,
-  IonHeader,
-  IonPage,
-  IonTitle,
-  IonToolbar,
-  IonList,
-  IonItem,
-  IonLabel,
-  IonBadge,
-  IonSearchbar,
-} from '@ionic/react';
+import { IonBadge, IonItem, IonLabel, IonList, IonSearchbar } from '@ionic/react';
+import AppPage from '../components/AppPage';
 import { api } from '../lib/api';
 
 type StockItem = {
@@ -33,38 +23,28 @@ export default function StockPage() {
   }, []);
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonTitle>Склад</IonTitle>
-        </IonToolbar>
-        <IonToolbar>
-          <IonSearchbar
-            value={q}
-            onIonInput={(e) => setQ(e.detail.value || '')}
-            onIonClear={() => load('')}
-            onKeyUp={(e) => {
-              if (e.key === 'Enter') load();
-            }}
-            placeholder="Поиск по типу блока"
-          />
-        </IonToolbar>
-      </IonHeader>
-      <IonContent>
-        <IonList>
-          {items.map((item) => (
-            <IonItem key={item.id}>
-              <IonLabel>
-                <h2>{item.blockType.name}</h2>
-                <p>
-                  {item.blockType.code} · мин. {item.blockType.minStock}
-                </p>
-              </IonLabel>
-              <IonBadge color={item.isLow ? 'warning' : 'success'}>{item.quantity}</IonBadge>
-            </IonItem>
-          ))}
-        </IonList>
-      </IonContent>
-    </IonPage>
+    <AppPage title="Склад">
+      <IonSearchbar
+        value={q}
+        debounce={400}
+        onIonInput={(e) => {
+          const value = e.detail.value || '';
+          setQ(value);
+          load(value).catch(console.error);
+        }}
+        placeholder="Поиск по типу блока"
+      />
+      <IonList>
+        {items.map((item) => (
+          <IonItem key={item.id}>
+            <IonLabel>
+              <h2>{item.blockType.name}</h2>
+              <p>{item.blockType.code} · мин. {item.blockType.minStock}</p>
+            </IonLabel>
+            <IonBadge color={item.isLow ? 'warning' : 'success'}>{item.quantity}</IonBadge>
+          </IonItem>
+        ))}
+      </IonList>
+    </AppPage>
   );
 }

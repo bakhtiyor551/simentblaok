@@ -7,52 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum RoleCode {
-  ADMIN
-  DIRECTOR
-  MANAGER
-  PRODUCTION
-  WAREHOUSE
-  DRIVER
-  ACCOUNTANT
-}
-
-enum ShiftType {
-  DAY
-  NIGHT
-}
-
-enum OrderStatus {
-  NEW
-  CONFIRMED
-  IN_DELIVERY
-  DELIVERED
-  CANCELLED
-}
-
-enum DeliveryStatus {
-  PENDING
-  ASSIGNED
-  IN_PROGRESS
-  DELIVERED
-  CANCELLED
-}
-
-enum StockMovementType {
-  PRODUCTION
-  SALE
-  ADJUSTMENT
-  RETURN
-}
-
-enum SalaryCalcType {
-  PER_BLOCK
-  FIXED
-}
-
 model Role {
   id          String   @id @default(cuid())
-  code        RoleCode @unique
+  code        String   @unique
   name        String
   description String?
   users       User[]
@@ -85,22 +42,22 @@ model User {
 }
 
 model Employee {
-  id           String         @id @default(cuid())
-  userId       String?        @unique
-  user         User?          @relation(fields: [userId], references: [id])
+  id           String       @id @default(cuid())
+  userId       String?      @unique
+  user         User?        @relation(fields: [userId], references: [id])
   fullName     String
   phone        String?
   position     String?
-  hireDate     DateTime       @default(now())
-  isActive     Boolean        @default(true)
-  ratePerBlock Decimal        @default(0)
-  fixedSalary  Decimal        @default(0)
-  calcType     SalaryCalcType @default(PER_BLOCK)
+  hireDate     DateTime     @default(now())
+  isActive     Boolean      @default(true)
+  ratePerBlock Decimal      @default(0)
+  fixedSalary  Decimal      @default(0)
+  calcType     String       @default("PER_BLOCK")
   productions  Production[]
   salaries     Salary[]
   fines        Fine[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   @@map("employees")
 }
@@ -141,7 +98,7 @@ model Production {
   blockTypeId String
   blockType   BlockType @relation(fields: [blockTypeId], references: [id])
   quantity    Int
-  shift       ShiftType @default(DAY)
+  shift       String    @default("DAY")
   comment     String?
   employeeId  String?
   employee    Employee? @relation(fields: [employeeId], references: [id])
@@ -166,16 +123,16 @@ model Stock {
 }
 
 model StockMovement {
-  id           String            @id @default(cuid())
+  id           String    @id @default(cuid())
   blockTypeId  String
-  blockType    BlockType         @relation(fields: [blockTypeId], references: [id])
-  type         StockMovementType
+  blockType    BlockType @relation(fields: [blockTypeId], references: [id])
+  type         String
   quantity     Int
   balanceAfter Int
   reference    String?
   comment      String?
   createdById  String?
-  createdAt    DateTime          @default(now())
+  createdAt    DateTime  @default(now())
 
   @@map("stock_movements")
 }
@@ -184,7 +141,7 @@ model Order {
   id            String      @id @default(cuid())
   customerId    String
   customer      Customer    @relation(fields: [customerId], references: [id])
-  status        OrderStatus @default(NEW)
+  status        String      @default("NEW")
   totalAmount   Decimal     @default(0)
   notes         String?
   needsDelivery Boolean     @default(false)
@@ -225,21 +182,21 @@ model Vehicle {
 }
 
 model Delivery {
-  id          String         @id @default(cuid())
-  orderId     String         @unique
-  order       Order          @relation(fields: [orderId], references: [id])
+  id          String    @id @default(cuid())
+  orderId     String    @unique
+  order       Order     @relation(fields: [orderId], references: [id])
   vehicleId   String?
-  vehicle     Vehicle?       @relation(fields: [vehicleId], references: [id])
+  vehicle     Vehicle?  @relation(fields: [vehicleId], references: [id])
   driverId    String?
-  driver      User?          @relation("DeliveryDriver", fields: [driverId], references: [id])
-  status      DeliveryStatus @default(PENDING)
+  driver      User?     @relation("DeliveryDriver", fields: [driverId], references: [id])
+  status      String    @default("PENDING")
   address     String
   scheduledAt DateTime?
   deliveredAt DateTime?
   photoPath   String?
   notes       String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("deliveries")
 }

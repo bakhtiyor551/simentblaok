@@ -1,20 +1,16 @@
 import { useEffect, useState } from 'react';
 import {
   IonButton,
-  IonContent,
-  IonHeader,
   IonInput,
   IonItem,
   IonList,
-  IonPage,
   IonSelect,
   IonSelectOption,
-  IonTextarea,
-  IonTitle,
-  IonToolbar,
   IonText,
+  IonTextarea,
   IonToast,
 } from '@ionic/react';
+import AppPage from '../components/AppPage';
 import { api } from '../lib/api';
 
 type BlockType = { id: string; name: string };
@@ -52,44 +48,31 @@ export default function ProductionPage() {
   }
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonTitle>Производство</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent className="ion-padding">
-        <IonList>
-          <IonItem>
-            <IonSelect label="Тип блока" labelPlacement="stacked" value={blockTypeId} onIonChange={(e) => setBlockTypeId(e.detail.value)}>
-              {blocks.map((b) => (
-                <IonSelectOption key={b.id} value={b.id}>{b.name}</IonSelectOption>
-              ))}
-            </IonSelect>
-          </IonItem>
-          <IonItem>
-            <IonInput
-              type="number"
-              label="Количество"
-              labelPlacement="stacked"
-              value={quantity}
-              onIonInput={(e) => setQuantity(Number(e.detail.value || 0))}
-            />
-          </IonItem>
-          <IonItem>
-            <IonSelect label="Смена" labelPlacement="stacked" value={shift} onIonChange={(e) => setShift(e.detail.value)}>
-              <IonSelectOption value="DAY">Дневная</IonSelectOption>
-              <IonSelectOption value="NIGHT">Ночная</IonSelectOption>
-            </IonSelect>
-          </IonItem>
-          <IonItem>
-            <IonTextarea label="Комментарий" labelPlacement="stacked" value={comment} onIonInput={(e) => setComment(String(e.detail.value || ''))} />
-          </IonItem>
-        </IonList>
-        {error ? <IonText color="danger"><p>{error}</p></IonText> : null}
-        <IonButton expand="block" onClick={submit}>Сохранить</IonButton>
-        <IonToast isOpen={showOk} message="Производство сохранено" duration={2000} onDidDismiss={() => setShowOk(false)} />
-      </IonContent>
-    </IonPage>
+    <AppPage title="Производство">
+      <IonList>
+        <IonItem>
+          <IonSelect label="Тип блока" labelPlacement="stacked" value={blockTypeId} onIonChange={(e) => setBlockTypeId(e.detail.value)}>
+            {blocks.map((b) => (
+              <IonSelectOption key={b.id} value={b.id}>{b.name}</IonSelectOption>
+            ))}
+          </IonSelect>
+        </IonItem>
+        <IonItem>
+          <IonInput type="number" label="Количество" labelPlacement="stacked" value={quantity} onIonInput={(e) => setQuantity(Number(e.detail.value || 0))} />
+        </IonItem>
+        <IonItem>
+          <IonSelect label="Смена" labelPlacement="stacked" value={shift} onIonChange={(e) => setShift(e.detail.value)}>
+            <IonSelectOption value="DAY">Дневная</IonSelectOption>
+            <IonSelectOption value="NIGHT">Ночная</IonSelectOption>
+          </IonSelect>
+        </IonItem>
+        <IonItem>
+          <IonTextarea label="Комментарий" labelPlacement="stacked" value={comment} onIonInput={(e) => setComment(String(e.detail.value || ''))} />
+        </IonItem>
+      </IonList>
+      {error ? <IonText color="danger"><p>{error}</p></IonText> : null}
+      <IonButton expand="block" className="ion-margin-top" onClick={submit}>Сохранить</IonButton>
+      <IonToast isOpen={showOk} message="Производство сохранено, склад обновлен" duration={2000} onDidDismiss={() => setShowOk(false)} />
+    </AppPage>
   );
 }
