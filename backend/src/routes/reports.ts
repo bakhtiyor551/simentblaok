@@ -37,20 +37,26 @@ function periodRange(period: string) {
 async function buildReport(period: string) {
   const { start, end } = periodRange(period);
 
-  const [production, orders, deliveries, stock] = await Promise.all([
+  const [productionAgg, productionRows, orders, stock] = await Promise.all([
     prisma.production.aggregate({
       where: { producedAt: { gte: start, lte: end } },
       _sum: { quantity: true },
       _count: true,
     }),
+    prisma.production.findMany({
+      where: { producedAt: { gte: start, lte: end } },
+      include: { blockType: true },
+      orderBy: { producedAt: 'desc' },
+    }),
     prisma.order.findMany({
       where: { createdAt: { gte: start, lte: end }, status: { not: 'CANCELLED' } },
-      include: { items: true, customer: true },
+      include: { items: { include: { blockType: true } } },
+      orderBy: { createdAt: 'desc' },
     }),
-    prisma.delivery.count({
-      where: { deliveredAt: { gte: start, lte: end }, status: 'DELIVERED' },
+    prisma.stock.findMany({
+      include: { blockType: true },
+      orderBy: { blockType: { name: 'asc' } },
     }),
-    prisma.stock.findMany({ include: { blockType: true } }),
   ]);
 
   const salesAmount = orders.reduce((s, o) => s + Number(o.totalAmount), 0);
@@ -59,22 +65,91 @@ async function buildReport(period: string) {
     0
   );
 
+  const productionByTypeMap = new Map<string, { name: string; quantity: number; records: number }>();
+  for (const row of productionRows) {
+    const key = row.blockTypeId;
+    const prev = productionByTypeMap.get(key) || {
+      name: row.blockType.name,
+      quantity: 0,
+      records: 0,
+    };
+    prev.quantity += row.quantity;
+    prev.records += 1;
+    productionByTypeMap.set(key, prev);
+  }
+
+  const salesByTypeMap = new Map<
+    string,
+    { name: string; quantity: number; amount: number; orders: number }
+  >();
+  for (const order of orders) {
+    const seen = new Set<string>();
+    for (const item of order.items) {
+      const key = item.blockTypeId;
+      const prev = salesByTypeMap.get(key) || {
+        name: item.blockType.name,
+        quantity: 0,
+        amount: 0,
+        orders: 0,
+      };
+      prev.quantity += item.quantity;
+      prev.amount += Number(item.totalPrice);
+      if (!seen.has(key)) {
+        prev.orders += 1;
+        seen.add(key);
+      }
+      salesByTypeMap.set(key, prev);
+    }
+  }
+
+  const stockItems = stock.map((s) => ({
+    id: s.id,
+    quantity: s.quantity,
+    minStock: s.blockType.minStock,
+    isLow: s.quantity < s.blockType.minStock,
+    blockType: {
+      id: s.blockType.id,
+      name: s.blockType.name,
+      code: s.blockType.code,
+      unitPrice: Number(s.blockType.unitPrice),
+    },
+  }));
+
+  const orderList = orders.slice(0, 30).map((o) => ({
+    id: o.id,
+    status: o.status,
+    totalAmount: Number(o.totalAmount),
+    createdAt: o.createdAt,
+    items: o.items.map((i) => ({
+      quantity: i.quantity,
+      unitPrice: Number(i.unitPrice),
+      totalPrice: Number(i.totalPrice),
+      blockType: { name: i.blockType.name },
+    })),
+  }));
+
   return {
     period,
     from: start,
     to: end,
     production: {
-      records: production._count,
-      quantity: production._sum.quantity || 0,
+      records: productionAgg._count,
+      quantity: productionAgg._sum.quantity || 0,
+      byType: [...productionByTypeMap.values()].sort((a, b) => b.quantity - a.quantity),
     },
     sales: {
       orders: orders.length,
       quantity: salesQty,
       amount: salesAmount,
+      averageCheck: orders.length ? salesAmount / orders.length : 0,
+      byType: [...salesByTypeMap.values()].sort((a, b) => b.amount - a.amount),
     },
-    deliveriesCompleted: deliveries,
-    stock,
-    orders,
+    stock: {
+      totalBlocks: stockItems.reduce((s, i) => s + i.quantity, 0),
+      lowCount: stockItems.filter((i) => i.isLow).length,
+      items: stockItems,
+    },
+    recentOrders: orderList,
   };
 }
 
@@ -101,16 +176,25 @@ reportsRouter.get(
     doc.fontSize(18).text('BlockERP — Отчет', { align: 'center' });
     doc.moveDown();
     doc.fontSize(12).text(`Период: ${report.period}`);
-    doc.text(`С: ${report.from.toISOString()}`);
-    doc.text(`По: ${report.to.toISOString()}`);
+    doc.text(`С: ${report.from.toLocaleString('ru-RU')}`);
+    doc.text(`По: ${report.to.toLocaleString('ru-RU')}`);
     doc.moveDown();
     doc.text(`Производство: ${report.production.quantity} блоков (${report.production.records} записей)`);
-    doc.text(`Продажи: ${report.sales.orders} заказов, ${report.sales.quantity} блоков, сумма ${report.sales.amount}`);
-    doc.text(`Доставок выполнено: ${report.deliveriesCompleted}`);
+    for (const row of report.production.byType) {
+      doc.text(`  - ${row.name}: ${row.quantity}`);
+    }
     doc.moveDown();
-    doc.text('Остатки на складе:');
-    for (const s of report.stock) {
-      doc.text(`- ${s.blockType.name}: ${s.quantity}`);
+    doc.text(
+      `Продажи: ${report.sales.orders} заказов, ${report.sales.quantity} блоков, сумма ${report.sales.amount}`
+    );
+    doc.text(`Средний чек: ${Math.round(report.sales.averageCheck)}`);
+    for (const row of report.sales.byType) {
+      doc.text(`  - ${row.name}: ${row.quantity} шт · ${row.amount}`);
+    }
+    doc.moveDown();
+    doc.text(`Склад: ${report.stock.totalBlocks} блоков (низкий остаток: ${report.stock.lowCount})`);
+    for (const s of report.stock.items) {
+      doc.text(`- ${s.blockType.name}: ${s.quantity}${s.isLow ? ' ⚠' : ''}`);
     }
     doc.end();
   })
@@ -121,22 +205,36 @@ reportsRouter.get(
   asyncHandler(async (req, res) => {
     const report = await buildReport(req.params.period);
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Отчет');
-    ws.addRow(['BlockERP Отчет', report.period]);
-    ws.addRow(['С', report.from.toISOString()]);
-    ws.addRow(['По', report.to.toISOString()]);
-    ws.addRow([]);
-    ws.addRow(['Показатель', 'Значение']);
-    ws.addRow(['Производство (шт)', report.production.quantity]);
-    ws.addRow(['Записей производства', report.production.records]);
-    ws.addRow(['Заказов', report.sales.orders]);
-    ws.addRow(['Продано блоков', report.sales.quantity]);
-    ws.addRow(['Сумма продаж', report.sales.amount]);
-    ws.addRow(['Доставок', report.deliveriesCompleted]);
-    ws.addRow([]);
-    ws.addRow(['Тип блока', 'Остаток', 'Мин. остаток']);
-    for (const s of report.stock) {
-      ws.addRow([s.blockType.name, s.quantity, s.blockType.minStock]);
+
+    const summary = wb.addWorksheet('Сводка');
+    summary.addRow(['BlockERP Отчет', report.period]);
+    summary.addRow(['С', report.from.toISOString()]);
+    summary.addRow(['По', report.to.toISOString()]);
+    summary.addRow([]);
+    summary.addRow(['Показатель', 'Значение']);
+    summary.addRow(['Производство (шт)', report.production.quantity]);
+    summary.addRow(['Записей производства', report.production.records]);
+    summary.addRow(['Заказов', report.sales.orders]);
+    summary.addRow(['Продано блоков', report.sales.quantity]);
+    summary.addRow(['Сумма продаж', report.sales.amount]);
+    summary.addRow(['Средний чек', Math.round(report.sales.averageCheck)]);
+
+    const prodSheet = wb.addWorksheet('Производство');
+    prodSheet.addRow(['Тип блока', 'Количество', 'Записей']);
+    for (const row of report.production.byType) {
+      prodSheet.addRow([row.name, row.quantity, row.records]);
+    }
+
+    const salesSheet = wb.addWorksheet('Продажи');
+    salesSheet.addRow(['Тип блока', 'Количество', 'Сумма', 'В заказах']);
+    for (const row of report.sales.byType) {
+      salesSheet.addRow([row.name, row.quantity, row.amount, row.orders]);
+    }
+
+    const stockSheet = wb.addWorksheet('Склад');
+    stockSheet.addRow(['Тип блока', 'Остаток', 'Мин. остаток', 'Низкий']);
+    for (const s of report.stock.items) {
+      stockSheet.addRow([s.blockType.name, s.quantity, s.minStock, s.isLow ? 'да' : 'нет']);
     }
 
     res.setHeader(

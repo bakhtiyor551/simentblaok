@@ -55,8 +55,7 @@ export default function OrdersPage() {
       await api('/orders', {
         method: 'POST',
         body: JSON.stringify({
-          needsDelivery,
-          deliveryAddress,
+          needsDelivery: false,
           items: [{ blockTypeId, quantity: Number(quantity), unitPrice: Number(unitPrice) }],
         }),
       });
