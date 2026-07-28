@@ -66,12 +66,30 @@ ordersRouter.post(
       deliveryAddress?: string;
     };
 
-    if (!customerId || !items?.length) {
-      throw new AppError('Укажите клиента и позиции заказа');
+    if (!items?.length) {
+      throw new AppError('Укажите позиции заказа');
     }
 
-    const customer = await prisma.customer.findUnique({ where: { id: customerId } });
-    if (!customer) throw new AppError('Клиент не найден');
+    let customer = customerId
+      ? await prisma.customer.findUnique({ where: { id: customerId } })
+      : null;
+    if (customerId && !customer) throw new AppError('Клиент не найден');
+
+    // Клиент в продажах необязателен — используем розничного покупателя
+    if (!customer) {
+      customer = await prisma.customer.findFirst({
+        where: { phone: '0000000000' },
+      });
+      if (!customer) {
+        customer = await prisma.customer.create({
+          data: {
+            fullName: 'Розничный покупатель',
+            phone: '0000000000',
+            notes: 'Системный клиент для продаж без выбора клиента',
+          },
+        });
+      }
+    }
 
     for (const item of items) {
       if (!item.quantity || item.quantity <= 0) throw new AppError('Количество должно быть > 0');
@@ -91,7 +109,7 @@ ordersRouter.post(
     const order = await prisma.$transaction(async (tx) => {
       const created = await tx.order.create({
         data: {
-          customerId,
+          customerId: customer.id,
           notes,
           needsDelivery: Boolean(needsDelivery),
           totalAmount,

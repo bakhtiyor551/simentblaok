@@ -26,7 +26,7 @@ export async function sendTelegram(eventType: string, message: string) {
         parse_mode: 'HTML',
       }),
     });
-    const data = await res.json();
+    const data = (await res.json()) as { ok?: boolean };
     await prisma.telegramLog.create({
       data: {
         eventType,

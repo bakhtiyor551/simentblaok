@@ -19,15 +19,16 @@ stockRouter.get(
   asyncHandler(async (req, res) => {
     const q = String(req.query.q || '').trim();
     const items = await prisma.stock.findMany({
-      where: q
-        ? {
-            blockType: {
-              OR: [{ name: { contains: q } }, { code: { contains: q } }],
-            },
-          }
-        : undefined,
+      where: {
+        blockType: {
+          isActive: true,
+          ...(q
+            ? { OR: [{ name: { contains: q } }, { code: { contains: q } }] }
+            : {}),
+        },
+      },
       include: { blockType: true },
-      orderBy: { quantity: 'asc' },
+      orderBy: { quantity: 'desc' },
     });
 
     res.json(
