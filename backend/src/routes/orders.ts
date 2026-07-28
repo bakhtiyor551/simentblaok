@@ -66,12 +66,22 @@ ordersRouter.post(
       deliveryAddress?: string;
     };
 
-    if (!customerId || !items?.length) {
-      throw new AppError('Укажите клиента и позиции заказа');
+    if (!items?.length) {
+      throw new AppError('Укажите позиции заказа');
     }
 
-    const customer = await prisma.customer.findUnique({ where: { id: customerId } });
-    if (!customer) throw new AppError('Клиент не найден');
+    let customer = customerId
+      ? await prisma.customer.findUnique({ where: { id: customerId } })
+      : null;
+    if (customerId && !customer) throw new AppError('Клиент не найден');
+    if (!customer) {
+      customer = await prisma.customer.findFirst({ where: { phone: 'walk-in' } });
+      if (!customer) {
+        customer = await prisma.customer.create({
+          data: { fullName: 'Розничная продажа', phone: 'walk-in' },
+        });
+      }
+    }
 
     for (const item of items) {
       if (!item.quantity || item.quantity <= 0) throw new AppError('Количество должно быть > 0');
@@ -91,7 +101,7 @@ ordersRouter.post(
     const order = await prisma.$transaction(async (tx) => {
       const created = await tx.order.create({
         data: {
-          customerId,
+          customerId: customer.id,
           notes,
           needsDelivery: Boolean(needsDelivery),
           totalAmount,
@@ -136,16 +146,12 @@ ordersRouter.post(
     const lines = order.items
       .map((i) => `• ${i.blockType.name}: ${i.quantity} × ${i.unitPrice}`)
       .join('\n');
-    const msg =
-      `💰 Продажа\n` +
-      `Клиент: ${customer.fullName}\n` +
-      `${lines}\n` +
-      `Итого: ${totalAmount}`;
+    const msg = `💰 Продажа\n${lines}\nИтого: ${totalAmount}`;
 
     await sendTelegram('SALE', msg);
     await createNotification({
       title: 'Новая продажа',
-      message: `${customer.fullName}: ${totalAmount}`,
+      message: `Сумма: ${totalAmount}`,
       type: 'SALE',
     });
     await writeAudit({

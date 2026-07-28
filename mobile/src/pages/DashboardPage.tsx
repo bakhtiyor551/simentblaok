@@ -15,8 +15,6 @@ type Dashboard = {
   stock: { totalBlocks: number; lowStock: Array<{ quantity: number; blockType: { name: string; minStock: number } }> };
   productionToday: { quantity: number };
   salesToday: { count: number; amount: number };
-  deliveriesActive: number;
-  employeesActive: number;
 };
 
 export default function DashboardPage() {
@@ -54,12 +52,6 @@ export default function DashboardPage() {
             <IonCardHeader><IonCardTitle>Продажи сегодня</IonCardTitle></IonCardHeader>
             <IonCardContent>
               {data.salesToday.count} заказов · {Number(data.salesToday.amount).toLocaleString('ru-RU')}
-            </IonCardContent>
-          </IonCard>
-          <IonCard>
-            <IonCardHeader><IonCardTitle>Доставки / Сотрудники</IonCardTitle></IonCardHeader>
-            <IonCardContent>
-              {data.deliveriesActive} активных · {data.employeesActive} сотрудников
             </IonCardContent>
           </IonCard>
           {data.stock.lowStock.length > 0 ? (

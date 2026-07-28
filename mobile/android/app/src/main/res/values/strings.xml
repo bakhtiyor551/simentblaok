@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BlockERP</string>
+    <string name="title_activity_main">BlockERP</string>
+    <string name="package_name">com.blockerp.app</string>
+    <string name="custom_url_scheme">com.blockerp.app</string>
+</resources>

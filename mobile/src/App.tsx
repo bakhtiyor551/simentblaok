@@ -22,9 +22,6 @@ import {
   cubeOutline,
   layersOutline,
   cartOutline,
-  carOutline,
-  peopleOutline,
-  cashOutline,
   documentTextOutline,
   personOutline,
   businessOutline,
@@ -35,12 +32,7 @@ import DashboardPage from './pages/DashboardPage';
 import ProductionPage from './pages/ProductionPage';
 import StockPage from './pages/StockPage';
 import OrdersPage from './pages/OrdersPage';
-import DeliveriesPage from './pages/DeliveriesPage';
-import EmployeesPage from './pages/EmployeesPage';
-import SalaryPage from './pages/SalaryPage';
 import ReportsPage from './pages/ReportsPage';
-import CustomersPage from './pages/CustomersPage';
-import VehiclesPage from './pages/VehiclesPage';
 import ProfilePage from './pages/ProfilePage';
 
 setupIonicReact();
@@ -57,11 +49,6 @@ const menuItems: MenuItem[] = [
   { url: '/production', title: 'Производство', icon: cubeOutline },
   { url: '/stock', title: 'Склад', icon: layersOutline },
   { url: '/orders', title: 'Продажи', icon: cartOutline, roles: ['ADMIN', 'DIRECTOR', 'MANAGER', 'ACCOUNTANT'] },
-  { url: '/deliveries', title: 'Доставки', icon: carOutline, roles: ['ADMIN', 'DIRECTOR', 'MANAGER', 'DRIVER'] },
-  { url: '/customers', title: 'Клиенты', icon: peopleOutline, roles: ['ADMIN', 'DIRECTOR', 'MANAGER'] },
-  { url: '/employees', title: 'Сотрудники', icon: peopleOutline, roles: ['ADMIN', 'DIRECTOR', 'ACCOUNTANT', 'MANAGER'] },
-  { url: '/salary', title: 'Зарплата', icon: cashOutline, roles: ['ADMIN', 'DIRECTOR', 'ACCOUNTANT'] },
-  { url: '/vehicles', title: 'Автопарк', icon: carOutline, roles: ['ADMIN', 'DIRECTOR', 'MANAGER', 'DRIVER'] },
   { url: '/reports', title: 'Отчеты', icon: documentTextOutline, roles: ['ADMIN', 'DIRECTOR', 'ACCOUNTANT', 'MANAGER'] },
   { url: '/profile', title: 'Профиль', icon: personOutline },
 ];
@@ -141,11 +128,6 @@ export default function App() {
             <Route exact path="/production" component={ProductionPage} />
             <Route exact path="/stock" component={StockPage} />
             <Route exact path="/orders" component={OrdersPage} />
-            <Route exact path="/deliveries" component={DeliveriesPage} />
-            <Route exact path="/customers" component={CustomersPage} />
-            <Route exact path="/employees" component={EmployeesPage} />
-            <Route exact path="/salary" component={SalaryPage} />
-            <Route exact path="/vehicles" component={VehiclesPage} />
             <Route exact path="/reports" component={ReportsPage} />
             <Route
               exact

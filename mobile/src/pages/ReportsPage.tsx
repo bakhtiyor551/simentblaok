@@ -16,7 +16,6 @@ import { API_URL, api, getToken } from '../lib/api';
 type Report = {
   production: { quantity: number; records: number };
   sales: { orders: number; quantity: number; amount: number };
-  deliveriesCompleted: number;
 };
 
 export default function ReportsPage() {
@@ -77,10 +76,6 @@ export default function ReportsPage() {
             <IonCardContent>
               {report.sales.orders} заказов · {Number(report.sales.amount).toLocaleString('ru-RU')}
             </IonCardContent>
-          </IonCard>
-          <IonCard>
-            <IonCardHeader><IonCardTitle>Доставки</IonCardTitle></IonCardHeader>
-            <IonCardContent>{report.deliveriesCompleted}</IonCardContent>
           </IonCard>
           <IonButton expand="block" onClick={() => download('pdf').catch((e) => setError(e.message))}>
             Скачать PDF
