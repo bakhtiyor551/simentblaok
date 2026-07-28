@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
   IonButton,
   IonIcon,
@@ -15,6 +16,7 @@ import {
   downloadOutline,
   documentTextOutline,
   trendingUpOutline,
+  chevronForwardOutline,
 } from 'ionicons/icons';
 import AppPage from '../components/AppPage';
 import { API_URL, api, getToken } from '../lib/api';
@@ -89,6 +91,7 @@ function barWidth(value: number, max: number) {
 }
 
 export default function ReportsPage() {
+  const history = useHistory();
   const [period, setPeriod] = useState('day');
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
@@ -235,22 +238,36 @@ export default function ReportsPage() {
         {report && normalized ? (
           <>
             <section className="report-kpi-grid">
-              <article className="report-kpi report-kpi--green">
+              <button
+                type="button"
+                className="report-kpi report-kpi--green report-kpi--clickable"
+                onClick={() => history.push(`/reports/production/${period}`)}
+              >
                 <div className="report-kpi__icon">
                   <IonIcon icon={cubeOutline} />
                 </div>
                 <p>Произведено</p>
                 <strong>{money(report.production.quantity)}</strong>
                 <span>{report.production.records} записей</span>
-              </article>
-              <article className="report-kpi report-kpi--amber">
+                <em className="report-kpi__hint">
+                  Подробнее <IonIcon icon={chevronForwardOutline} />
+                </em>
+              </button>
+              <button
+                type="button"
+                className="report-kpi report-kpi--amber report-kpi--clickable"
+                onClick={() => history.push(`/reports/sales/${period}`)}
+              >
                 <div className="report-kpi__icon">
                   <IonIcon icon={cartOutline} />
                 </div>
                 <p>Продажи</p>
                 <strong>{money(Number(report.sales.amount))}</strong>
                 <span>{report.sales.orders} заказов · {money(report.sales.quantity)} блоков</span>
-              </article>
+                <em className="report-kpi__hint">
+                  Подробнее <IonIcon icon={chevronForwardOutline} />
+                </em>
+              </button>
               <article className="report-kpi report-kpi--slate">
                 <div className="report-kpi__icon">
                   <IonIcon icon={trendingUpOutline} />

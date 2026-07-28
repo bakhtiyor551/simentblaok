@@ -33,6 +33,8 @@ import ProductionPage from './pages/ProductionPage';
 import StockPage from './pages/StockPage';
 import OrdersPage from './pages/OrdersPage';
 import ReportsPage from './pages/ReportsPage';
+import ReportProductionDetailPage from './pages/ReportProductionDetailPage';
+import ReportSalesDetailPage from './pages/ReportSalesDetailPage';
 import ProfilePage from './pages/ProfilePage';
 
 setupIonicReact();
@@ -129,6 +131,8 @@ export default function App() {
             <Route exact path="/stock" component={StockPage} />
             <Route exact path="/orders" component={OrdersPage} />
             <Route exact path="/reports" component={ReportsPage} />
+            <Route exact path="/reports/production/:period" component={ReportProductionDetailPage} />
+            <Route exact path="/reports/sales/:period" component={ReportSalesDetailPage} />
             <Route
               exact
               path="/profile"

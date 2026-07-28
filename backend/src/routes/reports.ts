@@ -39,21 +39,31 @@ async function buildReport(period: string) {
 
   const [productionAgg, productionRows, orders, stock] = await Promise.all([
     prisma.production.aggregate({
-      where: { producedAt: { gte: start, lte: end } },
+      where: { producedAt: { gte: start, lte: end }, blockType: { isActive: true } },
       _sum: { quantity: true },
       _count: true,
     }),
     prisma.production.findMany({
-      where: { producedAt: { gte: start, lte: end } },
-      include: { blockType: true },
+      where: { producedAt: { gte: start, lte: end }, blockType: { isActive: true } },
+      include: {
+        blockType: true,
+        employee: { select: { id: true, fullName: true } },
+        createdBy: { select: { id: true, login: true } },
+      },
       orderBy: { producedAt: 'desc' },
     }),
     prisma.order.findMany({
       where: { createdAt: { gte: start, lte: end }, status: { not: 'CANCELLED' } },
-      include: { items: { include: { blockType: true } } },
+      include: {
+        customer: { select: { id: true, fullName: true, phone: true } },
+        items: { include: { blockType: true } },
+        delivery: true,
+        createdBy: { select: { id: true, login: true } },
+      },
       orderBy: { createdAt: 'desc' },
     }),
     prisma.stock.findMany({
+      where: { blockType: { isActive: true } },
       include: { blockType: true },
       orderBy: { blockType: { name: 'asc' } },
     }),
@@ -115,16 +125,38 @@ async function buildReport(period: string) {
     },
   }));
 
-  const orderList = orders.slice(0, 30).map((o) => ({
+  const productionItems = productionRows.map((p) => ({
+    id: p.id,
+    quantity: p.quantity,
+    shift: p.shift,
+    comment: p.comment,
+    producedAt: p.producedAt,
+    blockType: { id: p.blockType.id, name: p.blockType.name, code: p.blockType.code },
+    employee: p.employee,
+    createdBy: p.createdBy,
+  }));
+
+  const orderList = orders.map((o) => ({
     id: o.id,
     status: o.status,
+    notes: o.notes,
+    needsDelivery: o.needsDelivery,
     totalAmount: Number(o.totalAmount),
     createdAt: o.createdAt,
+    customer: o.customer,
+    createdBy: o.createdBy,
+    delivery: o.delivery
+      ? {
+          id: o.delivery.id,
+          status: o.delivery.status,
+          address: o.delivery.address,
+        }
+      : null,
     items: o.items.map((i) => ({
       quantity: i.quantity,
       unitPrice: Number(i.unitPrice),
       totalPrice: Number(i.totalPrice),
-      blockType: { name: i.blockType.name },
+      blockType: { name: i.blockType.name, code: i.blockType.code },
     })),
   }));
 
@@ -136,6 +168,7 @@ async function buildReport(period: string) {
       records: productionAgg._count,
       quantity: productionAgg._sum.quantity || 0,
       byType: [...productionByTypeMap.values()].sort((a, b) => b.quantity - a.quantity),
+      items: productionItems,
     },
     sales: {
       orders: orders.length,
@@ -149,7 +182,8 @@ async function buildReport(period: string) {
       lowCount: stockItems.filter((i) => i.isLow).length,
       items: stockItems,
     },
-    recentOrders: orderList,
+    recentOrders: orderList.slice(0, 30),
+    orders: orderList,
   };
 }
 
