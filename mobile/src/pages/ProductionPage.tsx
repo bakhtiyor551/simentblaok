@@ -3,6 +3,7 @@ import {
   IonButton,
   IonInput,
   IonItem,
+  IonLabel,
   IonList,
   IonSelect,
   IonSelectOption,
@@ -14,9 +15,18 @@ import AppPage from '../components/AppPage';
 import { api } from '../lib/api';
 
 type BlockType = { id: string; name: string };
+type Production = {
+  id: string;
+  quantity: number;
+  shift: string;
+  producedAt: string;
+  comment?: string | null;
+  blockType: { name: string };
+};
 
 export default function ProductionPage() {
   const [blocks, setBlocks] = useState<BlockType[]>([]);
+  const [items, setItems] = useState<Production[]>([]);
   const [blockTypeId, setBlockTypeId] = useState('');
   const [quantity, setQuantity] = useState(100);
   const [shift, setShift] = useState('DAY');
@@ -24,13 +34,18 @@ export default function ProductionPage() {
   const [error, setError] = useState('');
   const [showOk, setShowOk] = useState(false);
 
+  async function load() {
+    const [b, p] = await Promise.all([
+      api<BlockType[]>('/block-types'),
+      api<Production[]>('/production'),
+    ]);
+    setBlocks(b);
+    setItems(p);
+    if (!blockTypeId && b[0]) setBlockTypeId(b[0].id);
+  }
+
   useEffect(() => {
-    api<BlockType[]>('/block-types')
-      .then((b) => {
-        setBlocks(b);
-        if (b[0]) setBlockTypeId(b[0].id);
-      })
-      .catch((e) => setError(e.message));
+    load().catch((e) => setError(e.message));
   }, []);
 
   async function submit() {
@@ -42,10 +57,13 @@ export default function ProductionPage() {
       });
       setComment('');
       setShowOk(true);
+      await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка');
     }
   }
+
+  const total = items.reduce((s, i) => s + i.quantity, 0);
 
   return (
     <AppPage title="Производство">
@@ -72,6 +90,30 @@ export default function ProductionPage() {
       </IonList>
       {error ? <IonText color="danger"><p>{error}</p></IonText> : null}
       <IonButton expand="block" className="ion-margin-top" onClick={submit}>Сохранить</IonButton>
+
+      <h3 className="ion-padding-top ion-padding-horizontal">
+        История · всего {total.toLocaleString('ru-RU')}
+      </h3>
+      <IonList>
+        {items.map((p) => (
+          <IonItem key={p.id}>
+            <IonLabel>
+              <h2>{p.blockType.name} × {p.quantity}</h2>
+              <p>
+                {p.shift === 'NIGHT' ? 'Ночная' : 'Дневная'} ·{' '}
+                {new Date(p.producedAt).toLocaleString('ru-RU', { timeZone: 'Asia/Dushanbe' })}
+              </p>
+              {p.comment ? <p>{p.comment}</p> : null}
+            </IonLabel>
+          </IonItem>
+        ))}
+        {items.length === 0 ? (
+          <IonItem>
+            <IonLabel>Записей пока нет</IonLabel>
+          </IonItem>
+        ) : null}
+      </IonList>
+
       <IonToast isOpen={showOk} message="Производство сохранено, склад обновлен" duration={2000} onDidDismiss={() => setShowOk(false)} />
     </AppPage>
   );

@@ -19,6 +19,7 @@ type Order = {
   totalAmount: string | number;
   status: string;
   createdAt: string;
+  customer?: { fullName: string } | null;
   items: Array<{ quantity: number; blockType: { name: string } }>;
 };
 
@@ -54,7 +55,8 @@ export default function OrdersPage() {
       await api('/orders', {
         method: 'POST',
         body: JSON.stringify({
-          needsDelivery: false,
+          needsDelivery,
+          deliveryAddress,
           items: [{ blockTypeId, quantity: Number(quantity), unitPrice: Number(unitPrice) }],
         }),
       });
@@ -94,7 +96,7 @@ export default function OrdersPage() {
             <IonLabel>
               <h2>{o.items.map((i) => `${i.blockType.name} × ${i.quantity}`).join(', ')}</h2>
               <p>{o.status} · {Number(o.totalAmount).toLocaleString('ru-RU')}</p>
-              <p>{new Date(o.createdAt).toLocaleString('ru-RU')}</p>
+              {o.customer?.fullName ? <p>{o.customer.fullName}</p> : null}
             </IonLabel>
           </IonItem>
         ))}

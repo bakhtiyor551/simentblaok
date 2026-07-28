@@ -24,6 +24,7 @@ productionRouter.get(
     const take = Math.min(Number(req.query.limit) || 50, 200);
     const items = await prisma.production.findMany({
       take,
+      where: { blockType: { isActive: true } },
       orderBy: { producedAt: 'desc' },
       include: {
         blockType: true,

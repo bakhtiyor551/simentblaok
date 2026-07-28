@@ -20,16 +20,31 @@ dashboardRouter.get(
     RoleCode.DRIVER
   ),
   asyncHandler(async (_req, res) => {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
+    // День по Таджикистану (UTC+5), чтобы «сегодня» совпадало с локальным временем
+    const TZ_OFFSET_MS = 5 * 60 * 60 * 1000;
+    const nowLocal = new Date(Date.now() + TZ_OFFSET_MS);
+    const start = new Date(Date.UTC(
+      nowLocal.getUTCFullYear(),
+      nowLocal.getUTCMonth(),
+      nowLocal.getUTCDate(),
+      0, 0, 0, 0
+    ) - TZ_OFFSET_MS);
+    const end = new Date(Date.UTC(
+      nowLocal.getUTCFullYear(),
+      nowLocal.getUTCMonth(),
+      nowLocal.getUTCDate(),
+      23, 59, 59, 999
+    ) - TZ_OFFSET_MS);
 
     const [stockRows, productionToday, salesToday, deliveriesCount, employeesCount] =
       await Promise.all([
-        prisma.stock.findMany({ include: { blockType: true }, orderBy: { quantity: 'asc' } }),
+        prisma.stock.findMany({
+          where: { blockType: { isActive: true } },
+          include: { blockType: true },
+          orderBy: { quantity: 'desc' },
+        }),
         prisma.production.aggregate({
-          where: { producedAt: { gte: start, lte: end } },
+          where: { producedAt: { gte: start, lte: end }, blockType: { isActive: true } },
           _sum: { quantity: true },
           _count: true,
         }),
@@ -44,7 +59,9 @@ dashboardRouter.get(
         prisma.employee.count({ where: { isActive: true } }),
       ]);
 
-    const lowStock = stockRows.filter((s) => s.quantity <= s.blockType.minStock);
+    const lowStock = stockRows.filter(
+      (s) => s.blockType.isActive && s.quantity > 0 && s.quantity <= s.blockType.minStock
+    );
 
     res.json({
       stock: {

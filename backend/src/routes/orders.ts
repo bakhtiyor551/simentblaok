@@ -74,11 +74,19 @@ ordersRouter.post(
       ? await prisma.customer.findUnique({ where: { id: customerId } })
       : null;
     if (customerId && !customer) throw new AppError('Клиент не найден');
+
+    // Клиент в продажах необязателен — используем розничного покупателя
     if (!customer) {
-      customer = await prisma.customer.findFirst({ where: { phone: 'walk-in' } });
+      customer = await prisma.customer.findFirst({
+        where: { phone: '0000000000' },
+      });
       if (!customer) {
         customer = await prisma.customer.create({
-          data: { fullName: 'Розничная продажа', phone: 'walk-in' },
+          data: {
+            fullName: 'Розничный покупатель',
+            phone: '0000000000',
+            notes: 'Системный клиент для продаж без выбора клиента',
+          },
         });
       }
     }
